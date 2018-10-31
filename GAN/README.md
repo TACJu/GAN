@@ -1,4 +1,7 @@
 # GAN
 
+## Paper
+GAN - [Generative Adversarial Nets](https://arxiv.org/abs/1406.2661)
+
 ## MNIST Result
 ![gif](./images/GAN.gif)
