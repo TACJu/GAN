@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import os
 
 from keras.datasets import mnist
 from keras.layers import Input, Dense, Flatten, Reshape, Dropout, BatchNormalization, Activation
@@ -8,6 +8,9 @@ from keras.layers import Conv2D, UpSampling2D, ZeroPadding2D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.optimizers import Adam
 from keras.models import Sequential, Model
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+plt.switch_backend('agg')
 
 class GAN():
     
@@ -77,7 +80,9 @@ class GAN():
 
     def train(self, epochs, batch_size=128, sample_interval=50):
 
-        (X_train, _), (_, _) = mnist.load_data()
+        f = np.load('../mnist.npz')
+        X_train = f['x_train']
+        f.close()
 
         X_train = X_train / 127.5 - 1.
         X_train = np.expand_dims(X_train, axis=3)
@@ -97,7 +102,7 @@ class GAN():
             d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
 
             noise = np.random.normal(0, 1, (batch_size, self.latent_dim))
-            g_loss = self.combined.train_on_batch(noise, valid)
+            g_loss = self.combined.train_on_batch(noise, real)
 
             print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
 
