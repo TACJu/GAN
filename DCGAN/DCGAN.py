@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from keras.layers import Input, Dense, Flatten, Reshape, Conv2D, Upsampling2D, Dropout, BatchNormalization, Activation
+from keras.layers import Input, Dense, Flatten, Reshape, Conv2D, UpSampling2D, ZeroPadding2D, Dropout, BatchNormalization, Activation
 from keras.layers.advanced_activations import LeakyReLU
 from keras.optimizers import Adam
 from keras.models import Sequential, Model
@@ -30,7 +30,7 @@ class DCGAN():
         self.generator = self.build_generator()
 
         noise = Input(shape=(self.latent_dim,))
-        img = self.generator(z)
+        img = self.generator(noise)
 
         pred = self.discriminator(img)
 
