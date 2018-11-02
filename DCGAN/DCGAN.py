@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from keras.layers import Input, Dense, Flatten, Reshape, BatchNormalization, Activation
+from keras.layers import Input, Dense, Flatten, Reshape, Conv2D, Upsampling2D, Dropout, BatchNormalization, Activation
 from keras.layers.advanced_activations import LeakyReLU
 from keras.optimizers import Adam
 from keras.models import Sequential, Model
@@ -11,9 +11,10 @@ from keras.utils import plot_model
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 plt.switch_backend('agg')
 
-class GAN():
+class DCGAN():
     
     def __init__(self):
+        # Input shape
         self.row = 28
         self.col = 28
         self.channel = 1
@@ -21,7 +22,7 @@ class GAN():
         self.latent_dim = 100
 
         optimizer = Adam(0.0002, 0.5)
-        
+
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         self.discriminator.trainable = False
@@ -29,29 +30,29 @@ class GAN():
         self.generator = self.build_generator()
 
         noise = Input(shape=(self.latent_dim,))
-        img = self.generator(noise)
-        
+        img = self.generator(z)
+
         pred = self.discriminator(img)
 
         self.combined = Model(noise, pred)
         self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
 
-
     def build_generator(self):
 
         model = Sequential()
 
-        model.add(Dense(256, input_dim=self.latent_dim))
-        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dense(128 * 7 * 7, activation="relu", input_dim=self.latent_dim))
+        model.add(Reshape((7, 7, 128)))
+        model.add(UpSampling2D())
+        model.add(Conv2D(128, kernel_size=3, padding="same"))
         model.add(BatchNormalization(momentum=0.8))
-        model.add(Dense(512))
-        model.add(LeakyReLU(alpha=0.2))
+        model.add(Activation("relu"))
+        model.add(UpSampling2D())
+        model.add(Conv2D(64, kernel_size=3, padding="same"))
         model.add(BatchNormalization(momentum=0.8))
-        model.add(Dense(1024))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(Dense(np.prod(self.img_shape), activation='tanh'))
-        model.add(Reshape(self.img_shape))
+        model.add(Activation("relu"))
+        model.add(Conv2D(self.channel, kernel_size=3, padding="same"))
+        model.add(Activation("tanh"))
 
         model.summary()
         plot_model(model, to_file='generator.png')
@@ -65,22 +66,34 @@ class GAN():
 
         model = Sequential()
 
-        model.add(Flatten(input_shape=self.img_shape))
-        model.add(Dense(512))
+        model.add(Conv2D(32, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(256))
+        model.add(Dropout(0.25))
+        model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
+        model.add(ZeroPadding2D(padding=((0,1),(0,1))))
+        model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(0.25))
+        model.add(Conv2D(128, kernel_size=3, strides=2, padding="same"))
+        model.add(BatchNormalization(momentum=0.8))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(0.25))
+        model.add(Conv2D(256, kernel_size=3, strides=1, padding="same"))
+        model.add(BatchNormalization(momentum=0.8))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(0.25))
+        model.add(Flatten())
         model.add(Dense(1, activation='sigmoid'))
-        
+
         model.summary()
         plot_model(model, to_file='discriminator.png')
 
         img = Input(shape=self.img_shape)
-        label = model(img)
+        pred = model(img)
 
-        return Model(img, label)
+        return Model(img, pred)
 
-    def train(self, epochs, batch_size=128, sample_interval=50):
+    def train(self, epochs, batch_size=128, save_interval=50):
 
         f = np.load('../mnist.npz')
         X_train = f['x_train']
@@ -103,15 +116,14 @@ class GAN():
             d_loss_fake = self.discriminator.train_on_batch(fake_imgs, fake)
             d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
 
-            noise = np.random.normal(0, 1, (batch_size, self.latent_dim))
             g_loss = self.combined.train_on_batch(noise, real)
 
-            print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
+            print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
 
-            if epoch % sample_interval == 0:
-                self.sample_images(epoch)
+            if epoch % save_interval == 0:
+                self.save_imgs(epoch)
 
-    def sample_images(self, epoch):
+    def save_imgs(self, epoch):
         r, c = 5, 5
         noise = np.random.normal(0, 1, (r * c, self.latent_dim))
         gen_imgs = self.generator.predict(noise)
@@ -123,11 +135,11 @@ class GAN():
             for j in range(c):
                 axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
                 axs[i,j].axis('off')
-                cnt += 1    
-        fig.savefig("images/%d.png" % epoch)
+                cnt += 1
+        fig.savefig("images/mnist_%d.png" % epoch)
         plt.close()
 
 
 if __name__ == '__main__':
-    gan = GAN()
-    gan.train(epochs=30000, batch_size=32, sample_interval=200)
+    dcgan = DCGAN()
+    dcgan.train(epochs=4000, batch_size=32, save_interval=50)
