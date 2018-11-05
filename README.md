@@ -1,2 +1,2 @@
-# Keras-GAN
-Reproduce different GAN results in Keras
+# GAN
+Reproduce different GAN results
