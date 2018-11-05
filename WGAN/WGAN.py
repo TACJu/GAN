@@ -49,14 +49,14 @@ class WGAN():
         model.add(Dense(128 * 7 * 7, activation="relu", input_dim=self.latent_dim))
         model.add(Reshape((7, 7, 128)))
         model.add(UpSampling2D())
-        model.add(Conv2D(128, kernel_size=3, padding="same"))
+        model.add(Conv2D(128, kernel_size=4, padding="same"))
         model.add(BatchNormalization(momentum=0.8))
         model.add(Activation("relu"))
         model.add(UpSampling2D())
-        model.add(Conv2D(64, kernel_size=3, padding="same"))
+        model.add(Conv2D(64, kernel_size=4, padding="same"))
         model.add(BatchNormalization(momentum=0.8))
         model.add(Activation("relu"))
-        model.add(Conv2D(self.channel, kernel_size=3, padding="same"))
+        model.add(Conv2D(self.channel, kernel_size=4, padding="same"))
         model.add(Activation("tanh"))
 
         model.summary()
@@ -71,19 +71,19 @@ class WGAN():
 
         model = Sequential()
 
-        model.add(Conv2D(32, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
+        model.add(Conv2D(16, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
-        model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
+        model.add(Conv2D(32, kernel_size=3, strides=2, padding="same"))
         model.add(ZeroPadding2D(padding=((0,1),(0,1))))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
-        model.add(Conv2D(128, kernel_size=3, strides=2, padding="same"))
+        model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
-        model.add(Conv2D(256, kernel_size=3, strides=1, padding="same"))
+        model.add(Conv2D(128, kernel_size=3, strides=1, padding="same"))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
@@ -104,7 +104,7 @@ class WGAN():
         X_train = f['x_train']
         f.close()
 
-        X_train = X_train / 127.5 - 1.
+        X_train = (X_train.astype(np.float32) - 127.5) / 127.5
         X_train = np.expand_dims(X_train, axis=3)
 
         real = -np.ones((batch_size, 1))
@@ -154,4 +154,4 @@ class WGAN():
 
 if __name__ == '__main__':
     wgan = WGAN()
-    wgan.train(epochs=30000, batch_size=64, save_interval=200)
+    wgan.train(epochs=4000, batch_size=32, save_interval=50)
