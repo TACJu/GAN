@@ -7,6 +7,6 @@ WGAN - [Wasserstein GAN](https://arxiv.org/abs/1701.07875)
 ![gif](./WGAN.gif)
 
 ## Net Structure
-|Generator|Discriminator|
+|Generator|Critic|
 |---|---|
 |![Generator](./generator.png)|![Critic](./critic.png)
