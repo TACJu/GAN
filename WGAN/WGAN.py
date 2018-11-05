@@ -108,7 +108,7 @@ class WGAN():
         X_train = np.expand_dims(X_train, axis=3)
 
         real = -np.ones((batch_size, 1))
-        fake = np.zeros((batch_size, 1))
+        fake = np.ones((batch_size, 1))
 
         for epoch in range(epochs):
             for i in range(self.n_critic):
@@ -154,4 +154,4 @@ class WGAN():
 
 if __name__ == '__main__':
     wgan = WGAN()
-    wgan.train(epochs=4000, batch_size=32, save_interval=50)
+    wgan.train(epochs=30000, batch_size=32, save_interval=200)
