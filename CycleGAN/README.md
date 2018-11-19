@@ -11,4 +11,4 @@ CycleGAN - [Unpaired Image-to-Image Translation using Cycle-Consistent Adversari
 ## Net Structure
 |Generator|Discriminator|
 |---|---|
-|![Generator](./generator.png)|![Critic](./discriminator.png)
+|![Generator](./generator.png)|![Discriminator](./discriminator.png)
